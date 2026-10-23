@@ -112,6 +112,8 @@ namespace LocalAudioControl
                     case "--panel": ShowPanel(); show = false; break;
                     case "--favorite1": SelectFavorite(1); break;
                     case "--favorite2": SelectFavorite(2); break;
+                    case "--toggle-output": Audio.Select(OutputToggle.Target(Preferences, Audio.State().DeviceId)); break;
+                    case "--next-track": MediaControls.NextTrack(); show = false; break;
                     case "--volume-up": Adjust(Preferences.Step); break;
                     case "--volume-down": Adjust(-Preferences.Step); break;
                     case "--toggle-mute": Audio.SetMute(!Audio.State().Muted); break;

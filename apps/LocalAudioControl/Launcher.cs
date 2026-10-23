@@ -13,6 +13,8 @@ internal static class Launcher
         {
             case "Favorite1": command = "--favorite1"; break;
             case "Favorite2": command = "--favorite2"; break;
+            case "ToggleOutput": command = "--toggle-output"; break;
+            case "NextTrack": command = "--next-track"; break;
             case "VolumeUp": command = "--volume-up"; break;
             case "VolumeDown": command = "--volume-down"; break;
             default: return 2;

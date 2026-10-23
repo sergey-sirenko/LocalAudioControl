@@ -97,13 +97,15 @@ namespace LocalAudioControl
         private readonly Control dispatcher;
         private readonly Func<string, string> execute;
         private readonly Action exit;
+        private readonly string pipeName;
         private readonly Thread thread;
         private volatile bool stopped;
         private NamedPipeServerStream active;
         private readonly object sync = new object();
-        internal CommandServer(Control dispatcher, Func<string, string> execute, Action exit)
+        internal CommandServer(Control dispatcher, Func<string, string> execute, Action exit, string pipeName = null)
         {
             this.dispatcher = dispatcher; this.execute = execute; this.exit = exit;
+            this.pipeName = pipeName ?? Program.PipeName;
             thread = new Thread(Run) { IsBackground = true, Name = "Local audio commands" }; thread.Start();
         }
         private void Run()
@@ -117,7 +119,7 @@ namespace LocalAudioControl
                     security.SetOwner(WindowsIdentity.GetCurrent().User);
                     security.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
                     security.AddAccessRule(new PipeAccessRule(WindowsIdentity.GetCurrent().User, PipeAccessRights.FullControl, AccessControlType.Allow));
-                    using (var pipe = new NamedPipeServerStream(Program.PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte,
+                    using (var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous, 4096, 4096, security))
                     {
                         lock (sync) { if (stopped) return; active = pipe; }

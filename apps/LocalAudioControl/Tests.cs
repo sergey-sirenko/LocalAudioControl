@@ -13,6 +13,8 @@ namespace LocalAudioControl
         {
             string output = args[0]; Directory.CreateDirectory(output);
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+            TestMouseCommands();
+            TestCommandSequence();
             var p = new Preferences(); p.Validate();
             if (p.Step != 3 || !p.OsdEnabled || !p.AutoStart || p.OsdMilliseconds != 1200) throw new Exception("Invalid defaults");
             var legacy = Storage.Json.Deserialize<Preferences>("{\"Favorite1\":\"a\",\"Favorite2\":\"b\",\"Name1\":\"One\",\"Name2\":\"Two\",\"Step\":3,\"OsdEnabled\":true,\"OsdMilliseconds\":1200,\"AutoStart\":true}");
@@ -64,6 +66,96 @@ namespace LocalAudioControl
             try { Audio.Select("nonexistent-endpoint-for-test"); } catch (InvalidOperationException) { missingRejected = true; }
             if (!missingRejected || Audio.DefaultId(1) != original) throw new Exception("Missing endpoint changed output");
             Console.WriteLine("Defaults, legacy migration, colors, contrast, validation, missing device and UI render tests passed."); return 0;
+        }
+        private static void TestMouseCommands()
+        {
+            var preferences = new Preferences { Favorite1 = "a", Favorite2 = "b" };
+            if (OutputToggle.Target(preferences, "a") != "b" || OutputToggle.Target(preferences, "b") != "a"
+                || OutputToggle.Target(preferences, "other") != "a" || OutputToggle.Target(preferences, null) != "a"
+                || OutputToggle.Target(preferences, "A") != "b") throw new Exception("Toggle target failed");
+            foreach (var invalid in new [] {
+                new Preferences(), new Preferences { Favorite1 = "a" }, new Preferences { Favorite2 = "b" },
+                new Preferences { Favorite1 = "a", Favorite2 = "A" } })
+            {
+                bool rejected = false;
+                try { OutputToggle.Target(invalid, "a"); } catch (InvalidOperationException) { rejected = true; }
+                if (!rejected) throw new Exception("Invalid toggle settings accepted");
+            }
+            int calls = 0;
+            MediaControls.NextTrack((count, inputs, size) =>
+            {
+                calls++;
+                if (count != 2 || inputs.Length != 2 || size != (IntPtr.Size == 8 ? 40 : 28))
+                    throw new Exception("Invalid native input layout");
+                if (inputs.Any(i => i.Type != 1 || i.Data.Keyboard.Key != 0xB0 || i.Data.Keyboard.Scan != 0)
+                    || inputs[0].Data.Keyboard.Flags != 0 || inputs[1].Data.Keyboard.Flags != 2)
+                    throw new Exception("Expected one next-track press and release");
+                return 2;
+            });
+            if (calls != 1) throw new Exception("Media command repeated");
+            foreach (uint result in new uint[] { 0, 1 })
+            {
+                calls = 0; bool rejected = false;
+                try
+                {
+                    MediaControls.NextTrack((count, inputs, size) =>
+                    {
+                        calls++;
+                        if (calls == 1) return result;
+                        if (count != 1 || inputs.Length != 1 || inputs[0].Data.Keyboard.Flags != 2)
+                            throw new Exception("Partial send must only release the media key");
+                        return 1;
+                    });
+                }
+                catch (System.ComponentModel.Win32Exception) { rejected = true; }
+                if (!rejected || calls != (result == 1 ? 2 : 1)) throw new Exception("Media send failure handling failed");
+            }
+            Console.WriteLine("Output toggle and media input tests passed (no real media input sent).");
+        }
+        private static void TestCommandSequence()
+        {
+            string pipeName = "LocalAudioControl.Tests." + Guid.NewGuid().ToString("N");
+            string current = "a";
+            int executed = 0;
+            var preferences = new Preferences { Favorite1 = "a", Favorite2 = "b" };
+            using (var dispatcher = new Control())
+            {
+                var handle = dispatcher.Handle;
+                int uiThread = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                using (var server = new CommandServer(dispatcher, command =>
+                {
+                    if (command != "--toggle-output" || System.Threading.Thread.CurrentThread.ManagedThreadId != uiThread)
+                        throw new Exception("Wrong command dispatch");
+                    current = OutputToggle.Target(preferences, current); executed++;
+                    return current;
+                }, () => { }, pipeName))
+                {
+                    var client = System.Threading.Tasks.Task.Factory.StartNew(() =>
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            using (var pipe = new System.IO.Pipes.NamedPipeClientStream(".", pipeName, System.IO.Pipes.PipeDirection.InOut))
+                            {
+                                pipe.Connect(3000);
+                                using (var writer = new StreamWriter(pipe, new System.Text.UTF8Encoding(false), 1024, true) { AutoFlush = true })
+                                using (var reader = new StreamReader(pipe, System.Text.Encoding.UTF8, true, 1024, true))
+                                {
+                                    writer.WriteLine("--toggle-output");
+                                    string reply = reader.ReadLine();
+                                    if (reply != (i % 2 == 0 ? "b" : "a")) throw new Exception("Repeated toggle commands out of sequence");
+                                }
+                            }
+                        }
+                    });
+                    var deadline = DateTime.UtcNow.AddSeconds(15);
+                    while (!client.IsCompleted && DateTime.UtcNow < deadline)
+                    { Application.DoEvents(); System.Threading.Thread.Sleep(5); }
+                    if (!client.IsCompleted) throw new Exception("Command sequence timed out");
+                    client.GetAwaiter().GetResult();
+                    if (executed != 8 || current != "a") throw new Exception("Command sequence lost a toggle");
+                }
+            }
+            Console.WriteLine("Repeated commands through isolated IPC passed.");
         }
         private static void Render(Form form, float scale, string path)
         {
