@@ -1,0 +1,14 @@
+apps/LocalAudioControl/build/
+dist/
+*.log
+*.user
+*.suo
+.vs/
+__pycache__/
+*.pyc
+# Local migration records and legacy commands with machine-specific endpoint IDs.
+COPY_MANIFEST.json
+scripts/
+docs/LOCAL_AUDIO_CONTROL.md
+docs/LOCAL_AUDIO_RDP.md
+docs/LOCAL_VOLUME_RDP.md
