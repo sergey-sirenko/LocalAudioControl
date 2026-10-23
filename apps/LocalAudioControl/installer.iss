@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C7B63617-7CEF-49E0-AC21-D106C32994EB}
 AppName=Local Audio Control
-AppVersion=1.1.1
+AppVersion=1.1.4
 AppPublisher=Local Audio Control
 DefaultDirName={localappdata}\Programs\LocalAudioControl
 DefaultGroupName=Local Audio Control
@@ -24,6 +24,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "build\LocalAudioControl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\LocalAudioControl.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\Commands\*.exe"; DestDir: "{app}\Commands"; Flags: ignoreversion
+Source: "build\LegacyCommands\*.exe"; DestDir: "{app}\LegacyCommands"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Local Audio Control"; Filename: "{app}\LocalAudioControl.exe"; Parameters: "--settings"

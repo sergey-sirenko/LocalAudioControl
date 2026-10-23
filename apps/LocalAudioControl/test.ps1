@@ -33,6 +33,24 @@ if ($AudioIntegration) {
             if ([LocalAudioControl.Audio]::State().Percent -ne 12) { throw 'Volume set failed.' }
             [LocalAudioControl.Audio]::SetPercent(15)
             if ([LocalAudioControl.Audio]::State().Percent -ne 15) { throw 'Volume step failed.' }
+            [LocalAudioControl.Audio]::SetMute($false)
+            [LocalAudioControl.Audio]::SetPercent(0)
+            $zero = [LocalAudioControl.Audio]::State()
+            if ($zero.Percent -ne 0 -or -not $zero.Muted) { throw 'Zero volume must mute the endpoint.' }
+            [LocalAudioControl.Audio]::SetPercent(3)
+            $resumed = [LocalAudioControl.Audio]::State()
+            if ($resumed.Percent -ne 3 -or $resumed.Muted) { throw 'Increasing from zero must resume audio at 3%.' }
+            [LocalAudioControl.Audio]::SetMute($true)
+            [LocalAudioControl.Audio]::SetPercent(2)
+            if (-not [LocalAudioControl.Audio]::State().Muted) { throw 'Lowering volume must preserve mute.' }
+            [LocalAudioControl.Audio]::SetPercent(5)
+            if ([LocalAudioControl.Audio]::State().Muted) { throw 'Raising volume must resume audio even if already above zero.' }
+            foreach ($level in @(9,6,3,0,3,0,3,0)) {
+                [LocalAudioControl.Audio]::SetPercent($level)
+                Start-Sleep -Milliseconds 200
+                $settled = [LocalAudioControl.Audio]::State()
+                if ($settled.Percent -ne $level -or $settled.Muted -ne ($level -eq 0)) { throw 'Settled volume/mute cycle failed.' }
+            }
             [LocalAudioControl.Audio]::SetMute(-not $state.Muted)
             if ([LocalAudioControl.Audio]::State().Muted -eq $state.Muted) { throw 'Mute failed.' }
             if ([LocalAudioControl.Audio]::DefaultId(2) -ne $original2) { throw 'Communications changed.' }

@@ -86,7 +86,27 @@ namespace LocalAudioControl
         public static void SetPercent(int percent)
         {
             if (percent < 0 || percent > 100) throw new ArgumentOutOfRangeException("percent", "Громкость должна быть от 0 до 100%.");
-            WithVolume((v, d) => { Guid context = Guid.Empty; Check(v.SetMasterVolumeLevelScalar(percent / 100f, ref context)); return true; });
+            WithVolume((v, d) =>
+            {
+                Guid context = Guid.Empty;
+                float previous; Check(v.GetMasterVolumeLevelScalar(out previous));
+                bool muted; Check(v.GetMute(out muted));
+                bool targetMute = percent == 0 || (muted && percent <= (int)Math.Round(previous * 100));
+                // Endpoint drivers can change gain when mute changes. Read back both
+                // values after settling and repair only the value that differs.
+                for (int attempt = 0; attempt < 5; attempt++)
+                {
+                    float level; Check(v.GetMasterVolumeLevelScalar(out level));
+                    if ((int)Math.Round(level * 100) != percent)
+                        Check(v.SetMasterVolumeLevelScalar(percent / 100f, ref context));
+                    Check(v.GetMute(out muted));
+                    if (muted != targetMute) Check(v.SetMute(targetMute, ref context));
+                    System.Threading.Thread.Sleep(60);
+                    Check(v.GetMasterVolumeLevelScalar(out level)); Check(v.GetMute(out muted));
+                    if ((int)Math.Round(level * 100) == percent && muted == targetMute) return true;
+                }
+                throw new InvalidOperationException("Устройство не подтвердило громкость и выключение звука. Повторите команду.");
+            });
         }
         public static void SetMute(bool muted) { WithVolume((v, d) => { Guid context = Guid.Empty; Check(v.SetMute(muted, ref context)); return true; }); }
         private static void SetRole(string id, int role)

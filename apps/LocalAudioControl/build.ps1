@@ -14,6 +14,11 @@ Copy-Item (Join-Path $project 'LocalAudioControl.exe.config') $build -Force
 & $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ ('/out:'+(Join-Path $build 'Commands\Favorite1.exe')) (Join-Path $project 'Launcher.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Command launcher compilation failed.' }
 'Favorite2','VolumeUp','VolumeDown' | ForEach-Object { Copy-Item (Join-Path $build 'Commands\Favorite1.exe') (Join-Path $build ('Commands\'+$_+'.exe')) -Force }
+$legacyBuild = Join-Path $build 'LegacyCommands'
+New-Item -ItemType Directory -Path $legacyBuild -Force | Out-Null
+& $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu ('/out:'+(Join-Path $legacyBuild 'Local-Volume-Up.exe')) (Join-Path $project 'LegacyVolumeLauncher.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Legacy volume launcher compilation failed.' }
+Copy-Item (Join-Path $legacyBuild 'Local-Volume-Up.exe') (Join-Path $legacyBuild 'Local-Volume-Down.exe') -Force
 Get-ChildItem $build -Filter '*.exe' -Recurse | Get-FileHash | Select-Object Path,Hash
 if (-not $AppOnly) {
     if (-not $IsccPath) {
