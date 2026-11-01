@@ -11,9 +11,10 @@
   <ItemGroup>
     <Reference Include="System" /><Reference Include="System.Core" /><Reference Include="System.Drawing" />
     <Reference Include="System.Web.Extensions" /><Reference Include="System.Windows.Forms" />
+    <Reference Include="UIAutomationClient" /><Reference Include="UIAutomationTypes" />
     <Compile Include="AssemblyInfo.cs" /><Compile Include="CoreAudio.cs" /><Compile Include="Settings.cs" />
     <Compile Include="Program.cs" /><Compile Include="UserInterface.cs" />
-    <Compile Include="MouseCommands.cs" />
+    <Compile Include="MouseCommands.cs" /><Compile Include="FocusGuard.cs" /><Compile Include="SmtcMedia.cs" />
     <None Include="LocalAudioControl.exe.config"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

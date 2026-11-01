@@ -7,8 +7,9 @@ $dist = Join-Path $repository 'dist'
 New-Item -ItemType Directory -Path $build,(Join-Path $build 'Commands'),$dist -Force | Out-Null
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
-$sources = 'AssemblyInfo.cs','CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs' | ForEach-Object { Join-Path $project $_ }
-& $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /main:LocalAudioControl.Program /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll ('/win32manifest:'+(Join-Path $project 'app.manifest')) ('/out:'+(Join-Path $build 'LocalAudioControl.exe')) @sources
+$uia = Join-Path (Split-Path $compiler -Parent) 'WPF'
+$sources = 'AssemblyInfo.cs','CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs','FocusGuard.cs','SmtcMedia.cs' | ForEach-Object { Join-Path $project $_ }
+& $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /main:LocalAudioControl.Program /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll ('/reference:'+(Join-Path $uia 'UIAutomationClient.dll')) ('/reference:'+(Join-Path $uia 'UIAutomationTypes.dll')) ('/win32manifest:'+(Join-Path $project 'app.manifest')) ('/out:'+(Join-Path $build 'LocalAudioControl.exe')) @sources
 if ($LASTEXITCODE -ne 0) { throw 'Application compilation failed.' }
 Copy-Item (Join-Path $project 'LocalAudioControl.exe.config') $build -Force
 & $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ ('/out:'+(Join-Path $build 'Commands\Favorite1.exe')) (Join-Path $project 'Launcher.cs')

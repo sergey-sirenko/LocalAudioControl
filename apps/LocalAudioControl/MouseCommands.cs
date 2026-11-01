@@ -48,10 +48,12 @@ namespace LocalAudioControl
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint SendInput(uint count, Input[] inputs, int size);
 
-        internal static void NextTrack() { NextTrack(SendInput); }
+        internal static void NextTrack() { NextTrack(SmtcMedia.TrySkipNext, SendInput); }
 
-        internal static void NextTrack(Func<uint, Input[], int, uint> send)
+        internal static void NextTrack(Func<bool> tryLocal, Func<uint, Input[], int, uint> send)
         {
+            // Локальная SMTC-команда не зависит от активного окна и работает при RDP.
+            if (tryLocal()) return;
             var down = new Input { Type = 1, Data = new InputData { Keyboard = new KeyboardInput { Key = NextTrackKey } } };
             var up = new Input { Type = 1, Data = new InputData { Keyboard = new KeyboardInput { Key = NextTrackKey, Flags = KeyUp } } };
             int size = Marshal.SizeOf(typeof(Input));

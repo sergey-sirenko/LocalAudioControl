@@ -14,6 +14,7 @@ namespace LocalAudioControl
             string output = args[0]; Directory.CreateDirectory(output);
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
             TestMouseCommands();
+            TestFocusGuard();
             TestCommandSequence();
             var p = new Preferences(); p.Validate();
             if (p.Step != 3 || !p.OsdEnabled || !p.AutoStart || p.OsdMilliseconds != 1200) throw new Exception("Invalid defaults");
@@ -82,7 +83,7 @@ namespace LocalAudioControl
                 if (!rejected) throw new Exception("Invalid toggle settings accepted");
             }
             int calls = 0;
-            MediaControls.NextTrack((count, inputs, size) =>
+            MediaControls.NextTrack(() => false, (count, inputs, size) =>
             {
                 calls++;
                 if (count != 2 || inputs.Length != 2 || size != (IntPtr.Size == 8 ? 40 : 28))
@@ -93,12 +94,15 @@ namespace LocalAudioControl
                 return 2;
             });
             if (calls != 1) throw new Exception("Media command repeated");
+            int localCalls = 0, sendCalls = 0;
+            MediaControls.NextTrack(() => { localCalls++; return true; }, (count, inputs, size) => { sendCalls++; return 2; });
+            if (localCalls != 1 || sendCalls != 0) throw new Exception("Local media command did not bypass the media key");
             foreach (uint result in new uint[] { 0, 1 })
             {
                 calls = 0; bool rejected = false;
                 try
                 {
-                    MediaControls.NextTrack((count, inputs, size) =>
+                    MediaControls.NextTrack(() => false, (count, inputs, size) =>
                     {
                         calls++;
                         if (calls == 1) return result;
@@ -111,6 +115,18 @@ namespace LocalAudioControl
                 if (!rejected || calls != (result == 1 ? 2 : 1)) throw new Exception("Media send failure handling failed");
             }
             Console.WriteLine("Output toggle and media input tests passed (no real media input sent).");
+        }
+        private static void TestFocusGuard()
+        {
+            foreach (int id in new [] { 50009, 50010, 50011 })
+                if (!FocusGuard.IsMenuId(id)) throw new Exception("Menu type not detected: " + id);
+            foreach (int id in new [] { 0, 50004, 50020, 50030 })
+                if (FocusGuard.IsMenuId(id)) throw new Exception("Non-menu type accepted: " + id);
+            foreach (string command in new [] { "--favorite1", "--favorite2", "--toggle-output", "--next-track", "--volume-up", "--volume-down" })
+                if (!FocusGuard.IsRepairCommand(command)) throw new Exception("Focus repair skipped for " + command);
+            foreach (string command in new [] { "--panel", "--settings", "--status", "--quit", "--tray", "--toggle-mute", "--volume=50" })
+                if (FocusGuard.IsRepairCommand(command)) throw new Exception("Focus repair started for " + command);
+            Console.WriteLine("Focus guard classification tests passed.");
         }
         private static void TestCommandSequence()
         {

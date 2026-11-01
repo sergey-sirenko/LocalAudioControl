@@ -43,11 +43,11 @@ namespace LocalAudioControl
             RefreshState(true);
             if (preview) return;
             tray.Visible = true;
-            server = new CommandServer(dispatcher, Execute, ExitThread);
+            server = new CommandServer(dispatcher, c => Execute(c, true), ExitThread);
             timer.Tick += (s, e) => RefreshState(++ticks % 5 == 0); timer.Start();
             dispatcher.BeginInvoke(new Action(() =>
             {
-                if (firstCommand != "--tray") Execute(firstCommand);
+                if (firstCommand != "--tray") Execute(firstCommand, true);
                 if (firstRun && firstCommand != "--settings") ShowSettings();
             }));
         }
@@ -100,8 +100,10 @@ namespace LocalAudioControl
             if (String.IsNullOrEmpty(id)) throw new InvalidOperationException("Сначала выберите избранное устройство №" + number + " в настройках.");
             Audio.Select(id);
         }
-        internal string Execute(string command)
+        internal string Execute(string command) { return Execute(command, false); }
+        internal string Execute(string command, bool external)
         {
+            if (external && FocusGuard.IsRepairCommand(command)) FocusGuard.RepairSoon();
             try
             {
                 bool show = true;

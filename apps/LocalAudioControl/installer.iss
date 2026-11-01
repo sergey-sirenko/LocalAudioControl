@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C7B63617-7CEF-49E0-AC21-D106C32994EB}
 AppName=Local Audio Control
-AppVersion=1.1.5
+AppVersion=1.1.7
 AppPublisher=Local Audio Control
 DefaultDirName={localappdata}\Programs\LocalAudioControl
 DefaultGroupName=Local Audio Control

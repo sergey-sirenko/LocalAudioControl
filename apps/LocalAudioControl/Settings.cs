@@ -76,13 +76,14 @@ namespace LocalAudioControl
                 else key.DeleteValue("LocalAudioControl", false);
             }
         }
-        public static void Log(Exception ex)
+        public static void Log(Exception ex) { Log(ex.ToString()); }
+        public static void Log(string message)
         {
             try
             {
                 Directory.CreateDirectory(DirectoryPath); string path = Path.Combine(DirectoryPath, "error.log");
                 if (File.Exists(path) && new FileInfo(path).Length > 262144) File.Move(path, path + "." + DateTime.UtcNow.Ticks);
-                File.AppendAllText(path, DateTimeOffset.Now.ToString("o") + " " + ex + Environment.NewLine);
+                File.AppendAllText(path, DateTimeOffset.Now.ToString("o") + " " + message + Environment.NewLine);
             }
             catch { }
         }
