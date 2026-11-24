@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Local Audio Control — Яндекс Музыка",
+  "version": "1.1.0",
+  "description": "Передаёт команду «Следующий трек» из Local Audio Control в веб-плеер Яндекс Музыки.",
+  "minimum_chrome_version": "121",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0M3qCiG/zEpfbcpifzxtRbpAnmf531hnoIzEvmEEoI4tRvdthG5CpEFd9EZHgm4TNnMiUaQI0QsItMhT58IcG1MU58whCWqB80Ggk6pvGSSYPGvAJ0bNTnK9fC7SdmCkNlCjOani518bHgYbsxjvbnhGsuqwvjXa8kn8QydazZdsnmzNLpwGIP933lY2azl7wYHM64/dntPeYDYeoVBTHmKeiTFOgfqXkH0APH49qzYgCUtxlKW8S+uDDX4BxXUtJLbFeTGsH7NHPWKiJchSnxuf3iue1LMKUGBe5/9PAqy0mxCq++F5hIk47pBNPzoB0QDVt98XDuTOPfzEUn83JwIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://music.yandex.ru/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://music.yandex.ru/*"
+      ],
+      "js": [
+        "player.js"
+      ]
+    }
+  ]
+}

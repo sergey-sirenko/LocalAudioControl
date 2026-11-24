@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace LocalAudioControl
@@ -48,12 +50,45 @@ namespace LocalAudioControl
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint SendInput(uint count, Input[] inputs, int size);
 
-        internal static void NextTrack() { NextTrack(SmtcMedia.TrySkipNext, SendInput); }
+        internal static void NextTrack()
+        {
+            bool albumPlayerRunning = IsAlbumPlayerRunning();
+            Func<bool, bool> tryYandex = YandexMusicBridge.IsConfigured()
+                ? (Func<bool, bool>)YandexMusicBridge.TryNextTrack : null;
+            NextTrack(tryYandex, albumPlayerRunning, SmtcMedia.TrySkipNext, SendInput);
+        }
+
+        private static bool IsAlbumPlayerRunning()
+        {
+            using (var current = Process.GetCurrentProcess())
+            {
+                var players = Process.GetProcessesByName("APlayer");
+                try { return players.Any(player => player.SessionId == current.SessionId); }
+                finally { foreach (var player in players) player.Dispose(); }
+            }
+        }
+
+        internal static void NextTrack(Func<bool, bool> tryYandex, bool albumPlayerRunning, Func<bool> tryLocal,
+            Func<uint, Input[], int, uint> send)
+        {
+            if (tryYandex != null && tryYandex(albumPlayerRunning)) return;
+            if (albumPlayerRunning)
+            {
+                // Album Player registers the global Next Track key and has no SMTC session.
+                SendNextKey(send);
+                return;
+            }
+            NextTrack(tryLocal, send);
+        }
 
         internal static void NextTrack(Func<bool> tryLocal, Func<uint, Input[], int, uint> send)
         {
             // Локальная SMTC-команда не зависит от активного окна и работает при RDP.
-            if (tryLocal()) return;
+            if (!tryLocal()) SendNextKey(send);
+        }
+
+        private static void SendNextKey(Func<uint, Input[], int, uint> send)
+        {
             var down = new Input { Type = 1, Data = new InputData { Keyboard = new KeyboardInput { Key = NextTrackKey } } };
             var up = new Input { Type = 1, Data = new InputData { Keyboard = new KeyboardInput { Key = NextTrackKey, Flags = KeyUp } } };
             int size = Marshal.SizeOf(typeof(Input));

@@ -97,6 +97,22 @@ namespace LocalAudioControl
             int localCalls = 0, sendCalls = 0;
             MediaControls.NextTrack(() => { localCalls++; return true; }, (count, inputs, size) => { sendCalls++; return 2; });
             if (localCalls != 1 || sendCalls != 0) throw new Exception("Local media command did not bypass the media key");
+            foreach (bool albumPlayer in new [] { false, true })
+            {
+                foreach (bool yandexHandled in new [] { false, true })
+                {
+                    localCalls = sendCalls = 0;
+                    MediaControls.NextTrack(playingOnly =>
+                    {
+                        if (playingOnly != albumPlayer) throw new Exception("Incorrect Yandex track selection");
+                        return yandexHandled;
+                    }, albumPlayer, () => { localCalls++; return true; },
+                    (count, inputs, size) => { sendCalls++; return count; });
+                    if (localCalls != (!yandexHandled && !albumPlayer ? 1 : 0) ||
+                        sendCalls != (!yandexHandled && albumPlayer ? 1 : 0))
+                        throw new Exception("Incorrect next-track routing");
+                }
+            }
             foreach (uint result in new uint[] { 0, 1 })
             {
                 calls = 0; bool rejected = false;
@@ -118,6 +134,10 @@ namespace LocalAudioControl
         }
         private static void TestFocusGuard()
         {
+            foreach (string executable in new [] { "ChatGPT.exe", "codex.exe", "CODEX.EXE" })
+                if (FocusGuard.AllowsEscape(executable)) throw new Exception("Focus repair allowed Escape in " + executable);
+            foreach (string executable in new [] { "notepad.exe", "wordpad.exe", "WINWORD.EXE" })
+                if (!FocusGuard.AllowsEscape(executable)) throw new Exception("Focus repair blocked Escape in " + executable);
             foreach (int id in new [] { 50009, 50010, 50011 })
                 if (!FocusGuard.IsMenuId(id)) throw new Exception("Menu type not detected: " + id);
             foreach (int id in new [] { 0, 50004, 50020, 50030 })

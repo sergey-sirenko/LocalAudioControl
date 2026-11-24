@@ -51,6 +51,13 @@ namespace LocalAudioControl
             return id == MenuType || id == MenuBarType || id == MenuItemType;
         }
 
+        internal static bool AllowsEscape(string executable)
+        {
+            // Escape can interrupt a running request in the ChatGPT/Codex composer.
+            return !string.Equals(executable, "ChatGPT.exe", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(executable, "Codex.exe", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>Запускает асинхронную проверку фокуса. Команду не задерживает.</summary>
         internal static void RepairSoon()
         {
@@ -116,10 +123,12 @@ namespace LocalAudioControl
             uint foregroundPid;
             GetWindowThreadProcessId(foreground, out foregroundPid);
             if (foregroundPid != (uint)pid) return;
+            string executable = ProcessName(pid);
+            if (!AllowsEscape(executable)) return;
             if (GetForegroundWindow() != foreground) return;
 
             PressEscape();
-            Storage.Log("FocusGuard: Esc in " + ProcessName(pid) + " [" + (className ?? "") + "]");
+            Storage.Log("FocusGuard: Esc in " + executable + " [" + (className ?? "") + "]");
             Thread.Sleep(200);
         }
 

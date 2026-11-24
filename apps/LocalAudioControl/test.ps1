@@ -9,7 +9,7 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 & (Join-Path $project 'build.ps1') -AppOnly | Out-Null
 $uia = Join-Path (Split-Path $compiler -Parent) 'WPF'
-$sources = 'CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs','FocusGuard.cs','SmtcMedia.cs','Tests.cs' | ForEach-Object { Join-Path $project $_ }
+$sources = 'CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs','FocusGuard.cs','SmtcMedia.cs','YandexMusicBridge.cs','Tests.cs' | ForEach-Object { Join-Path $project $_ }
 $test = Join-Path $project 'build\Tests.exe'
 & $compiler /nologo /codepage:65001 /target:exe /platform:anycpu /main:LocalAudioControl.Tests /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll ('/reference:'+(Join-Path $uia 'UIAutomationClient.dll')) ('/reference:'+(Join-Path $uia 'UIAutomationTypes.dll')) ('/out:'+$test) @sources
 if ($LASTEXITCODE -ne 0) { throw 'Test compilation failed.' }

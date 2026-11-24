@@ -14,7 +14,7 @@
     <Reference Include="UIAutomationClient" /><Reference Include="UIAutomationTypes" />
     <Compile Include="AssemblyInfo.cs" /><Compile Include="CoreAudio.cs" /><Compile Include="Settings.cs" />
     <Compile Include="Program.cs" /><Compile Include="UserInterface.cs" />
-    <Compile Include="MouseCommands.cs" /><Compile Include="FocusGuard.cs" /><Compile Include="SmtcMedia.cs" />
+    <Compile Include="MouseCommands.cs" /><Compile Include="FocusGuard.cs" /><Compile Include="SmtcMedia.cs" /><Compile Include="YandexMusicBridge.cs" />
     <None Include="LocalAudioControl.exe.config"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C7B63617-7CEF-49E0-AC21-D106C32994EB}
 AppName=Local Audio Control
-AppVersion=1.1.7
+AppVersion=1.1.9
 AppPublisher=Local Audio Control
 DefaultDirName={localappdata}\Programs\LocalAudioControl
 DefaultGroupName=Local Audio Control
@@ -23,6 +23,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "build\LocalAudioControl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\LocalAudioControl.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\YandexMusicHost.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\Register-YandexMusic.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\chrome-yandex-music\*"; DestDir: "{app}\chrome-yandex-music"; Flags: ignoreversion
 Source: "build\Commands\*.exe"; DestDir: "{app}\Commands"; Flags: ignoreversion
 Source: "build\LegacyCommands\*.exe"; DestDir: "{app}\LegacyCommands"; Flags: ignoreversion
 
@@ -35,6 +38,11 @@ Filename: "{app}\LocalAudioControl.exe"; Parameters: "--tray"; Description: "Ð—Ð
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "LocalAudioControl"; Flags: uninsdeletevalue
+
+Root: HKCU; Subkey: "Software\Google\Chrome\NativeMessagingHosts\local_audio_control.yandex_music"; Flags: dontcreatekey uninsdeletekey
+
+[UninstallDelete]
+Type: files; Name: "{app}\yandex-music-host.json"
 
 [Code]
 function InitializeSetup(): Boolean;

@@ -8,10 +8,16 @@ New-Item -ItemType Directory -Path $build,(Join-Path $build 'Commands'),$dist -F
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 $uia = Join-Path (Split-Path $compiler -Parent) 'WPF'
-$sources = 'AssemblyInfo.cs','CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs','FocusGuard.cs','SmtcMedia.cs' | ForEach-Object { Join-Path $project $_ }
+$sources = 'AssemblyInfo.cs','CoreAudio.cs','Settings.cs','Program.cs','UserInterface.cs','MouseCommands.cs','FocusGuard.cs','SmtcMedia.cs','YandexMusicBridge.cs' | ForEach-Object { Join-Path $project $_ }
 & $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /main:LocalAudioControl.Program /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll ('/reference:'+(Join-Path $uia 'UIAutomationClient.dll')) ('/reference:'+(Join-Path $uia 'UIAutomationTypes.dll')) ('/win32manifest:'+(Join-Path $project 'app.manifest')) ('/out:'+(Join-Path $build 'LocalAudioControl.exe')) @sources
 if ($LASTEXITCODE -ne 0) { throw 'Application compilation failed.' }
 Copy-Item (Join-Path $project 'LocalAudioControl.exe.config') $build -Force
+& $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /main:LocalAudioControl.YandexMusicBridge /reference:System.Web.Extensions.dll ('/out:'+(Join-Path $build 'YandexMusicHost.exe')) (Join-Path $project 'YandexMusicBridge.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Yandex Music host compilation failed.' }
+$extensionBuild = Join-Path $build 'chrome-yandex-music'
+New-Item -ItemType Directory -Path $extensionBuild -Force | Out-Null
+Copy-Item (Join-Path $project 'chrome-yandex-music\*') $extensionBuild -Force
+Copy-Item (Join-Path $project 'Register-YandexMusic.ps1') $build -Force
 & $compiler /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ ('/out:'+(Join-Path $build 'Commands\Favorite1.exe')) (Join-Path $project 'Launcher.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Command launcher compilation failed.' }
 'Favorite2','VolumeUp','VolumeDown','ToggleOutput','NextTrack' | ForEach-Object { Copy-Item (Join-Path $build 'Commands\Favorite1.exe') (Join-Path $build ('Commands\'+$_+'.exe')) -Force }
